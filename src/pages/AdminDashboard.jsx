@@ -11,7 +11,7 @@ export default function AdminDashboard() {
       setOrders(res.data)
     }
     load()
-    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000')
+    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000' ||'https://staurants-server.onrender.com')
     socket.on('order:new', (order) => setOrders((prev) => [...prev, order]))
     socket.on('order:update', (order) => setOrders((prev) => prev.map((o) => (o._id === order._id ? order : o))))
     socket.on('order:archive', ({ id }) => setOrders((prev) => prev.filter((o) => o._id !== id)))
