@@ -4,6 +4,7 @@ import CartPage from './pages/Cart'
 import SuccessPage from './pages/Success'
 import AdminLoginPage from './pages/AdminLogin'
 import AdminDashboard from './pages/AdminDashboard'
+import AdminTables from './pages/AdminTables'
 
 function App() {
   return (
@@ -15,6 +16,8 @@ function App() {
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/tables" element={<AdminTables />} />
+        
         <Route path="*" element={<div className="min-h-screen flex items-center justify-center">404</div>} />
       </Routes>
     </BrowserRouter>
