@@ -5,7 +5,8 @@
 
 
 body {
-  font-family: 'Sauce Tomato', sans-serif;
+  font-family: "Roboto Condensed", sans-serif;
+  font-optical-sizing: auto;
   
 }
  h1, h2,h3{
@@ -16,6 +17,6 @@ body {
     p{
          margin: 0.5em;
          letter-spacing: 1;
-            font-weight: 100
+            font-weight: 500
         
     }
