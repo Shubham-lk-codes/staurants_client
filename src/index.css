@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+
+body {
+  font-family: 'Sauce Tomato', sans-serif;
+  
+}
+ h1, h2,h3{
+      margin: 0.5em;
+      letter-spacing: 3px;
+    }
+
+    p{
+         margin: 0.5em;
+         letter-spacing: 1;
+            font-weight: 100
+        
+    }

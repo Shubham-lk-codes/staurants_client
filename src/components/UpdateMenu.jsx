@@ -172,7 +172,7 @@ export default function UpdateMenu() {
             className="border p-4 rounded flex flex-col gap-2"
           >
             {item.imageUrl && (
-              <img src={item.imageUrl} alt={item.name} className="h-32" />
+              <img src={item.imageUrl} alt={item.name} className="h-[45vh]" />
             )}
             <h3 className="font-bold">{item.name}</h3>
             <p>{item.description}</p>
