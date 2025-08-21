@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { api, authHeader } from "../lib/api";
 
@@ -8,9 +7,9 @@ export default function UpdateMenu() {
     name: "",
     description: "",
     price: "",
-    category: "Starters",
+    category: "Tea",
     prepMinutes: 15,
-    isAvailable: true
+    isAvailable: true,
   });
   const [image, setImage] = useState(null);
 
@@ -49,7 +48,7 @@ export default function UpdateMenu() {
         name: "",
         description: "",
         price: "",
-        category: "Starters",
+        category: "Tea",
         prepMinutes: 15,
         isAvailable: true,
       });
@@ -61,26 +60,24 @@ export default function UpdateMenu() {
   };
 
   // Update availability
-  
 
   const toggleAvailability = async (id, current) => {
-  try {
-    await api.put(
-      `/menu/${id}`,
-      { isAvailable: !current },
-      { headers: authHeader() }
-    );
+    try {
+      await api.put(
+        `/menu/${id}`,
+        { isAvailable: !current },
+        { headers: authHeader() }
+      );
 
-    setMenuItems((items) =>
-      items.map((item) =>
-        item._id === id ? { ...item, isAvailable: !current } : item
-      )
-    );
-  } catch (err) {
-    console.error("Update failed:", err);
-  }
-};
-
+      setMenuItems((items) =>
+        items.map((item) =>
+          item._id === id ? { ...item, isAvailable: !current } : item
+        )
+      );
+    } catch (err) {
+      console.error("Update failed:", err);
+    }
+  };
 
   // Delete item
   const handleDelete = async (id) => {
@@ -104,9 +101,7 @@ export default function UpdateMenu() {
           placeholder="Name"
           className="border p-2 w-full"
           value={formData.name}
-          onChange={(e) =>
-            setFormData((p) => ({ ...p, name: e.target.value }))
-          }
+          onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
           required
         />
         <textarea
@@ -134,10 +129,16 @@ export default function UpdateMenu() {
             setFormData((p) => ({ ...p, category: e.target.value }))
           }
         >
-          <option>Starters</option>
-          <option>Main Course</option>
-          <option>Drinks</option>
-          <option>Desserts</option>
+          <option>Tea</option>
+          <option>Coffee</option>
+          <option>Shake</option>
+          <option>Frezzers</option>
+          <option>Pasta</option>
+          <option>Sandwich</option>
+          <option>Maggi</option>
+          <option>Burger</option>
+          <option>Pizza</option>
+          <option>Quick Bites</option>
         </select>
         <input
           type="number"
@@ -153,9 +154,7 @@ export default function UpdateMenu() {
           accept="image/*"
           onChange={(e) => setImage(e.target.files[0])}
         />
-        {image && (
-          <p className="text-sm text-gray-600 mt-1">{image.name}</p>
-        )}
+        {image && <p className="text-sm text-gray-600 mt-1">{image.name}</p>}
         <button
           type="submit"
           className="bg-blue-500 text-white px-4 py-2 rounded"
@@ -207,4 +206,3 @@ export default function UpdateMenu() {
     </div>
   );
 }
-
