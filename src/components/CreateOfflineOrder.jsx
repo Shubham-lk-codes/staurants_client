@@ -15,18 +15,26 @@ export default function CreateOfflineOrder({ onOrderCreated }) {
   );
 
   useEffect(() => {
+    const token = localStorage.getItem("admin_token");
+
     // ✅ fetch tables
-    api.get("/tables")
+    api
+      .get("/admin/tables", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       .then((res) => setTables(res.data))
       .catch((err) => console.error(err));
 
     // ✅ fetch menu
-    api.get("/menu")
+    api
+      .get("/menu", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       .then((res) => setMenu(res.data))
       .catch((err) => console.error(err));
   }, []);
 
-  // ✅ item add
+  // ✅ add item
   const addItem = (menuItem) => {
     const existing = selectedItems.find((i) => i._id === menuItem._id);
     if (existing) {
@@ -43,7 +51,7 @@ export default function CreateOfflineOrder({ onOrderCreated }) {
     }
   };
 
-  // ✅ quantity update
+  // ✅ update quantity
   const updateQuantity = (id, quantity) => {
     if (quantity <= 0) {
       setSelectedItems((prev) => prev.filter((i) => i._id !== id));
@@ -54,24 +62,31 @@ export default function CreateOfflineOrder({ onOrderCreated }) {
     }
   };
 
-  // ✅ order submit
+  // ✅ submit order (COD)
   const handleSubmit = async () => {
     if (!selectedTable || selectedItems.length === 0) {
       alert("Please select a table and add items.");
       return;
     }
     setLoading(true);
+
+    const token = localStorage.getItem("admin_token");
+
     try {
-      await api.post("/orders", {
-        table: selectedTable,
-        items: selectedItems.map((i) => ({
-          item: i._id,
-          quantity: i.quantity,
-        })),
-        totalAmount,
-        paid: false,
-        status: "pending",
-      });
+      await api.post(
+        "/orders/cod",
+        {
+          tableToken: selectedTable, // ✅ backend expects _id here
+          ordered_items: selectedItems.map((i) => ({
+            itemId: i._id,
+            quantity: i.quantity,
+          })),
+        },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
       alert("Order created successfully!");
       setSelectedTable("");
       setSelectedItems([]);
@@ -97,7 +112,7 @@ export default function CreateOfflineOrder({ onOrderCreated }) {
         <option value="">Select Table</option>
         {tables.map((t) => (
           <option key={t._id} value={t._id}>
-            {t.name || `Table ${t.number}`}
+            {t.number ? `Table ${t.number}` : t.name}
           </option>
         ))}
       </select>
