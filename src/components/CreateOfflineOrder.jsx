@@ -1,194 +1,163 @@
-import { useEffect, useState } from 'react'
-import { api, authHeader } from '../lib/api'
+import { useEffect, useState } from "react";
+import { api } from "../lib/api";
 
-export default function CreateOfflineOrder() {
-  const [tables, setTables] = useState([])
-  const [menuItems, setMenuItems] = useState([])
-  const [selectedTable, setSelectedTable] = useState('')
-  const [selectedItems, setSelectedItems] = useState([])
-  const [paid, setPaid] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
+export default function CreateOfflineOrder({ onOrderCreated }) {
+  const [tables, setTables] = useState([]);
+  const [menu, setMenu] = useState([]);
+  const [selectedTable, setSelectedTable] = useState("");
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Load tables and menu items
+  // Total calculate
+  const totalAmount = selectedItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
   useEffect(() => {
-    async function loadData() {
-      try {
-        const [tablesRes, menuRes] = await Promise.all([
-          api.get('/tables', { headers: authHeader() }),
-          api.get('/menu', { headers: authHeader() }),
-        ])
-        setTables(tablesRes.data || [])
-        setMenuItems(menuRes.data || [])
-      } catch (err) {
-        console.error('Failed to load data:', err)
-      }
-    }
-    loadData()
-  }, [])
+    // ✅ fetch tables
+    api.get("/tables")
+      .then((res) => setTables(res.data))
+      .catch((err) => console.error(err));
 
-  // Add item to order
-  const addItem = (itemId) => {
-    setSelectedItems((prev) => {
-      const found = prev.find((it) => it.item === itemId)
-      if (found) {
-        return prev.map((it) =>
-          it.item === itemId ? { ...it, quantity: it.quantity + 1 } : it
+    // ✅ fetch menu
+    api.get("/menu")
+      .then((res) => setMenu(res.data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  // ✅ item add
+  const addItem = (menuItem) => {
+    const existing = selectedItems.find((i) => i._id === menuItem._id);
+    if (existing) {
+      setSelectedItems((prev) =>
+        prev.map((i) =>
+          i._id === menuItem._id ? { ...i, quantity: i.quantity + 1 } : i
         )
-      }
-      return [...prev, { item: itemId, quantity: 1 }]
-    })
-  }
+      );
+    } else {
+      setSelectedItems((prev) => [
+        ...prev,
+        { ...menuItem, quantity: 1, price: menuItem.price },
+      ]);
+    }
+  };
 
-  // Update item quantity
-  const updateQuantity = (itemId, qty) => {
-    if (qty < 1) {
-      setSelectedItems((prev) => prev.filter((it) => it.item !== itemId))
+  // ✅ quantity update
+  const updateQuantity = (id, quantity) => {
+    if (quantity <= 0) {
+      setSelectedItems((prev) => prev.filter((i) => i._id !== id));
     } else {
       setSelectedItems((prev) =>
-        prev.map((it) =>
-          it.item === itemId ? { ...it, quantity: qty } : it
-        )
-      )
+        prev.map((i) => (i._id === id ? { ...i, quantity } : i))
+      );
     }
-  }
+  };
 
-  // Calculate total
-  const totalAmount = selectedItems.reduce((sum, it) => {
-    const menuItem = menuItems.find((m) => m._id === it.item)
-    return sum + (menuItem?.price || 0) * it.quantity
-  }, 0)
-
-  // Submit order
-  const createOrder = async () => {
+  // ✅ order submit
+  const handleSubmit = async () => {
     if (!selectedTable || selectedItems.length === 0) {
-      setMessage('Please select table and at least 1 item')
-      return
+      alert("Please select a table and add items.");
+      return;
     }
-    setLoading(true)
-    setMessage('')
+    setLoading(true);
     try {
-      const res = await api.post(
-        '/orders',
-        {
-          table: selectedTable,
-          items: selectedItems,
-          status: 'pending',
-          totalAmount,
-          paid,
-        },
-        { headers: authHeader() }
-      )
-      setMessage('✅ Order created successfully!')
-      // reset
-      setSelectedTable('')
-      setSelectedItems([])
-      setPaid(false)
+      await api.post("/orders", {
+        table: selectedTable,
+        items: selectedItems.map((i) => ({
+          item: i._id,
+          quantity: i.quantity,
+        })),
+        totalAmount,
+        paid: false,
+        status: "pending",
+      });
+      alert("Order created successfully!");
+      setSelectedTable("");
+      setSelectedItems([]);
+      onOrderCreated && onOrderCreated();
     } catch (err) {
-      console.error('Failed to create order:', err)
-      setMessage('❌ Failed to create order')
+      console.error(err);
+      alert("Error creating order");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="p-6 bg-white shadow rounded-xl border">
-      <h2 className="text-2xl font-bold mb-4">Create Offline Order</h2>
+    <div className="p-4 bg-white shadow rounded-lg">
+      <h2 className="text-xl font-bold mb-4">Create Offline Order</h2>
 
-      {/* Table select */}
-      <label className="block mb-3">
-        <span className="text-gray-700">Select Table</span>
-        <select
-          value={selectedTable}
-          onChange={(e) => setSelectedTable(e.target.value)}
-          className="mt-1 block w-full border rounded p-2"
-        >
-          <option value="">-- Select Table --</option>
-          {tables.map((t) => (
-            <option key={t._id} value={t._id}>
-              Table {t.number}
-            </option>
-          ))}
-        </select>
-      </label>
+      {/* Table selection */}
+      <select
+        className="border p-2 rounded mb-4 w-full"
+        value={selectedTable}
+        onChange={(e) => setSelectedTable(e.target.value)}
+      >
+        <option value="">Select Table</option>
+        {tables.map((t) => (
+          <option key={t._id} value={t._id}>
+            {t.name || `Table ${t.number}`}
+          </option>
+        ))}
+      </select>
 
-      {/* Menu items list */}
-      <div className="mb-4">
-        <span className="text-gray-700 font-medium">Add Items</span>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2 max-h-64 overflow-y-auto">
-          {menuItems.map((m) => (
+      {/* Menu List */}
+      <h3 className="font-semibold mb-2">Menu</h3>
+      <div className="grid grid-cols-2 gap-2 mb-4 max-h-60 overflow-y-auto">
+        {menu.map((m) => (
+          <button
+            key={m._id}
+            className="p-2 border rounded hover:bg-gray-100"
+            onClick={() => addItem(m)}
+          >
+            {m.name} – ₹{m.price}
+          </button>
+        ))}
+      </div>
+
+      {/* Selected Items */}
+      {selectedItems.length > 0 && (
+        <div className="mb-4">
+          <h3 className="font-semibold mb-2">Selected Items</h3>
+          {selectedItems.map((i) => (
             <div
-              key={m._id}
-              className="border p-3 rounded-lg hover:shadow cursor-pointer"
-              onClick={() => addItem(m._id)}
+              key={i._id}
+              className="flex justify-between items-center border-b py-1"
             >
-              <div className="font-semibold">{m.name}</div>
-              <div className="text-sm text-gray-500">₹{m.price}</div>
+              <span>
+                {i.name} – ₹{i.price}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  className="px-2 bg-gray-200"
+                  onClick={() => updateQuantity(i._id, i.quantity - 1)}
+                >
+                  -
+                </button>
+                <span>{i.quantity}</span>
+                <button
+                  className="px-2 bg-gray-200"
+                  onClick={() => updateQuantity(i._id, i.quantity + 1)}
+                >
+                  +
+                </button>
+              </div>
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Selected items */}
-      {selectedItems.length > 0 && (
-        <div className="mb-4">
-          <h3 className="font-medium mb-2">Selected Items</h3>
-          <ul className="space-y-2">
-            {selectedItems.map((it) => {
-              const menuItem = menuItems.find((m) => m._id === it.item)
-              return (
-                <li
-                  key={it.item}
-                  className="flex items-center justify-between border-b pb-2"
-                >
-                  <span>
-                    {menuItem?.name} (₹{menuItem?.price}) ×
-                  </span>
-                  <input
-                    type="number"
-                    min="1"
-                    value={it.quantity}
-                    onChange={(e) =>
-                      updateQuantity(it.item, parseInt(e.target.value) || 1)
-                    }
-                    className="w-16 border rounded p-1 ml-2"
-                  />
-                </li>
-              )
-            })}
-          </ul>
-        </div>
       )}
 
-      {/* Paid toggle */}
-      <div className="mb-4">
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={paid}
-            onChange={(e) => setPaid(e.target.checked)}
-          />
-          Mark as Paid
-        </label>
-      </div>
-
       {/* Total */}
-      <div className="mb-4 font-semibold text-lg">
-        Total: ₹{totalAmount}
-      </div>
+      <div className="text-lg font-bold mb-4">Total: ₹{totalAmount}</div>
 
-      {/* Submit button */}
       <button
-        onClick={createOrder}
+        onClick={handleSubmit}
         disabled={loading}
-        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+        className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
       >
-        {loading ? 'Creating...' : 'Create Order'}
+        {loading ? "Saving..." : "Create Order"}
       </button>
-
-      {/* Message */}
-      {message && <div className="mt-3 text-sm">{message}</div>}
     </div>
-  )
+  );
 }
