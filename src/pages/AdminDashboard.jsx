@@ -41,7 +41,6 @@ export default function AdminDashboard() {
         const res = await api.get("/orders?includeServed=true", {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        // ✅ अब सिर्फ served हटाओ, pending वाले भी दिखेंगे
         setOrders(
           Array.isArray(res.data)
             ? res.data.filter((o) => o.status !== "served")
@@ -66,7 +65,8 @@ export default function AdminDashboard() {
 
     socket.on("order:new", (order) => {
       if (order.status !== "served") {
-        setOrders((prev) => [...prev, order]);
+        // ✅ अब नए orders को ऊपर डालेंगे (latest first)
+        setOrders((prev) => [order, ...prev]);
       }
       if (soundOn) playBeep();
       if (Notification?.permission === "granted") {
@@ -83,7 +83,7 @@ export default function AdminDashboard() {
             ? prev.map((o) =>
                 o._id === incoming._id ? { ...o, ...incoming } : o
               )
-            : [...prev, incoming]
+            : [incoming, ...prev] // ✅ अगर नया है तो ऊपर डालो
         );
       }
     });
@@ -212,7 +212,6 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <div className="ml-64 flex-1 p-6 bg-orange-50">
         {activeTab === "orders" ? (
-          // ....... बाकी तेरे पुराने वाला orders का code untouched रहेगा
           <div>
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-3xl font-bold text-gray-800">Orders</h1>
@@ -232,7 +231,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Orders grid same as पहले */}
+            {/* Orders grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {orders.length === 0 ? (
                 <div className="col-span-3 text-center text-gray-500">
@@ -240,7 +239,6 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 orders.map((o) => (
-                  // order card code unchanged
                   <div
                     key={o._id}
                     className="bg-white rounded-xl shadow hover:shadow-md transition p-5 border border-gray-100"
@@ -343,7 +341,6 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-bold text-gray-800 mb-6">
               Create Cash on Delivery
             </h1>
-            {/* ✅ Placeholder for component */}
             <CreateOfflineOrder />
 
             <h2 className="text-xl font-bold mt-8 mb-4 text-gray-700">
@@ -358,7 +355,7 @@ export default function AdminDashboard() {
                 orders
                   .filter((o) => o.paid)
                   .sort(
-                    (a, b) => new Date(b.createdAt) - new Date(a.createdAt) // ✅ latest पहले
+                    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
                   )
                   .map((o) => (
                     <div
@@ -394,7 +391,6 @@ export default function AdminDashboard() {
                         ))}
                       </ul>
 
-                      {/* ✅ Status remove नहीं किया */}
                       <div
                         className={`mt-3 inline-block text-xs px-2 py-1 rounded-full font-medium ${
                           o.status === "pending"
@@ -420,7 +416,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-
-
-
